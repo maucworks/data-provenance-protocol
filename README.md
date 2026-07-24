@@ -1,3 +1,5 @@
+[[./res/dpp-logo.png]]
+
 # Data Provenance Protocol (DPP)
 
 Open, domain-independent protocol for cryptographically verifiable data provenance on the internet. Manifest + hashes + signature + chaining.
