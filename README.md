@@ -1,4 +1,4 @@
-[./res/dpp-logo.png]
+[](./res/dpp-logo.png)
 
 # Data Provenance Protocol (DPP)
 
