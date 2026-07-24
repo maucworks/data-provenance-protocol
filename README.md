@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 ![DPP logo](./res/dpp-logo.png)
-=======
-[](./res/dpp-logo.png)
->>>>>>> 560258f28882a72ce5df028e6a1c7e571a491a4b
 
 # Data Provenance Protocol (DPP)
 
