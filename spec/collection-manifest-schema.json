@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maucworks.github.io/data-provenance-protocol/spec/collection-manifest-schema.json",
+  "title": "DPP Collection Manifest",
+  "description": "Schema for a DPP client-side collection manifest (dpp-collection/1.0)",
+  "type": "object",
+  "required": ["schema", "manifest_id", "created", "tool", "session_id", "sources", "signed_by", "signature"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "dpp-collection/1.0",
+      "description": "Schema version identifier"
+    },
+    "manifest_id": {
+      "type": "string",
+      "pattern": "^urn:sha256:[a-f0-9]{64}$"
+    },
+    "created": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "tool": {
+      "type": "string",
+      "description": "Name of the tool that collected the data"
+    },
+    "session_id": {
+      "type": "string",
+      "description": "Unique session identifier"
+    },
+    "description": {
+      "type": "string"
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/collection_source" }
+    },
+    "metadata": {
+      "type": "object"
+    },
+    "signed_by": {
+      "type": "string"
+    },
+    "signature": {
+      "oneOf": [
+        { "$ref": "#/$defs/signature" },
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/signature" }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "collection_source": {
+      "type": "object",
+      "required": ["name", "url", "fetch_time", "response_hash"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Human-readable source name"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Source URL that was fetched"
+        },
+        "fetch_time": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the source was fetched"
+        },
+        "response_hash": {
+          "type": "string",
+          "pattern": "^(sha256|sha512):[a-f0-9]{64,128}$"
+        },
+        "response_size": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "content_type": {
+          "type": "string"
+        },
+        "server_manifest": {
+          "type": "string",
+          "pattern": "^urn:sha256:[a-f0-9]{64}$",
+          "description": "Optional: hash of server-side DPP manifest for this source"
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "required": ["backend", "key_id", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "backend": {
+          "type": "string",
+          "enum": ["gpg", "sigstore", "pkcs7"]
+        },
+        "key_id": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

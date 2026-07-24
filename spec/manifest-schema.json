@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maucworks.github.io/data-provenance-protocol/spec/manifest-schema.json",
+  "title": "DPP Manifest",
+  "description": "Schema for a DPP server-side manifest (dpp/1.0)",
+  "type": "object",
+  "required": ["schema", "manifest_id", "created", "artifacts", "signed_by", "signature"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "dpp/1.0",
+      "description": "Schema version identifier"
+    },
+    "manifest_id": {
+      "type": "string",
+      "pattern": "^urn:sha256:[a-f0-9]{64}$",
+      "description": "URN with SHA-256 hash of the canonical manifest (excluding signature)"
+    },
+    "created": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 manifest creation timestamp"
+    },
+    "domain": {
+      "type": "string",
+      "description": "Domain schema identifier (e.g. bim-ifc/1.0)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the delivery"
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/artifact" },
+      "description": "List of data files covered by this manifest"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Arbitrary key-value metadata"
+    },
+    "extensions": {
+      "type": "object",
+      "description": "Domain-specific extensions keyed by domain identifier"
+    },
+    "supersedes": {
+      "type": "string",
+      "pattern": "^urn:sha256:[a-f0-9]{64}$",
+      "description": "Hash of the manifest this one supersedes (chaining)"
+    },
+    "signed_by": {
+      "type": "string",
+      "description": "Identifier of the signing entity"
+    },
+    "signature": {
+      "oneOf": [
+        { "$ref": "#/$defs/signature" },
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/signature" },
+          "description": "Multi-party signatures"
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "required": ["path", "hash"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Relative path within the delivery"
+        },
+        "hash": {
+          "type": "string",
+          "pattern": "^(sha256|sha512):[a-f0-9]{64,128}$",
+          "description": "Hash algorithm and hex-encoded value"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "File size in bytes"
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "required": ["backend", "key_id", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "backend": {
+          "type": "string",
+          "enum": ["gpg", "sigstore", "pkcs7"],
+          "description": "Signing backend identifier"
+        },
+        "key_id": {
+          "type": "string",
+          "description": "Identifier of the signing key"
+        },
+        "value": {
+          "type": "string",
+          "description": "Base64-encoded signature over the canonical manifest"
+        }
+      }
+    }
+  }
+}

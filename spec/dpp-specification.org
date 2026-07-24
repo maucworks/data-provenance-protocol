@@ -1,0 +1,372 @@
+#+TITLE: Data Provenance Protocol — Specification v1.0
+#+AUTHOR: Sander Boer
+#+DATE: [2026-07-24]
+#+LICENSE: CC0-1.0
+#+OPTIONS: toc:t H:2
+
+This specification is dedicated to the public domain under CC0-1.0.
+
+* Protocol overview
+
+Data Provenance Protocol (DPP) is a domain-independent protocol for
+cryptographically verifiable data provenance on the internet. It
+defines:
+
+- A manifest format (JSON) for declaring data origin and integrity
+- A signing procedure supporting multiple backends
+- Verification semantics that work offline
+- A domain extension model without protocol changes
+- An optional chaining mechanism for provenance chains
+
+DPP is self-contained: a manifest travels with the data. Verification
+requires the manifest, the data, and the signer's public key — no
+server, no platform, no live connection to the source.
+
+** Design principles
+
+1. Domain independence — no hardcoded fields, no domain-specific types
+2. Self-contained verification — manifest + data + key is sufficient
+3. Backend agnostic — supports GPG, Sigstore, PKCS#7, future backends
+4. Extensible — domain extensions without core protocol changes
+5. Offline-first — verification works years after signing, source offline
+
+** Two modes
+
+| Mode        | What it proves                              | Who signs        |
+|-------------+---------------------------------------------+------------------|
+| Server-side | "This data comes from source X"             | Data provider    |
+| Client-side | "This is what I received from source Y, at T" | Data collector |
+
+* Manifest format
+
+A DPP manifest is a JSON document with the following structure:
+
+#+BEGIN_SRC json
+{
+  "schema": "dpp/1.0",
+  "manifest_id": "urn:sha256:a1b2c3d4...",
+  "created": "2026-09-01T10:00:00Z",
+  "domain": "bim-ifc/1.0",
+  "description": "IFC delivery for project Kantoorpark Zuid",
+  "artifacts": [
+    {
+      "path": "model.ifc",
+      "hash": "sha256:d4e5f6a7b8c9...",
+      "size": 4821033
+    }
+  ],
+  "metadata": {},
+  "extensions": {},
+  "supersedes": null,
+  "signed_by": "Sander Boer <sanderboer@mauc.nl>",
+  "signature": {
+    "backend": "gpg",
+    "key_id": "ABCD1234...",
+    "value": "base64-encoded-signature"
+  }
+}
+#+END_SRC
+
+** Required fields
+
+| Field         | Type                 | Description                                       |
+|---------------+----------------------+---------------------------------------------------|
+| schema        | string               | Schema version identifier (=dpp/1.0=)             |
+| manifest_id   | string               | URN with hash of the manifest (excluding signature) |
+| created       | string (ISO 8601)    | Manifest creation timestamp                       |
+| artifacts     | array of artifact    | List of data files covered by this manifest       |
+| signed_by     | string               | Identifier of the signing entity                  |
+| signature     | signature object     | Cryptographic signature over the manifest hash    |
+
+** Optional fields
+
+| Field         | Type          | Description                                      |
+|---------------+---------------+--------------------------------------------------|
+| domain        | string        | Domain schema identifier for domain extensions    |
+| description   | string        | Human-readable description of the delivery        |
+| metadata      | object        | Arbitrary key-value metadata                      |
+| extensions    | object        | Domain-specific extensions (see domain model)     |
+| supersedes    | string        | Hash of the manifest this one supersedes (chaining) |
+
+** Artifact object
+
+| Field | Type   | Description                          |
+|-------+--------+--------------------------------------|
+| path  | string | Relative path within the delivery     |
+| hash  | string | Hash algorithm and value (=algo:hex=) |
+| size  | int    | File size in bytes (optional)         |
+
+** Signature object
+
+| Field   | Type   | Description                          |
+|---------+--------+--------------------------------------|
+| backend | string | Signing backend (=gpg=, =sigstore=, =pkcs7=) |
+| key_id  | string | Identifier of the signing key        |
+| value   | string | Base64-encoded signature             |
+
+** Manifest hash calculation
+
+The =manifest_id= is computed as:
+
+  manifest_id = "urn:sha256:" + SHA-256(canonical_manifest)
+
+Where =canonical_manifest= is the full manifest JSON *excluding* the
+=signature= field, serialized with sorted keys and no whitespace.
+
+* Signing
+
+DPP supports three signing backends. A manifest MAY include signatures
+from multiple backends.
+
+** GPG (GnuPG)
+
+Uses OpenPGP keys. The signer's public key is distributed out of band
+(WKD, keyserver, direct exchange). Verification uses the corresponding
+public key.
+
+Key ID format: OpenPGP key ID or full fingerprint.
+
+** Sigstore (keyless)
+
+Uses OIDC authentication with short-lived certificates and
+transparency log (Rekor). The signer authenticates via OIDC (Google,
+GitHub, Microsoft). A Fulcio CA issues a short-lived certificate. The
+signing event is logged in Rekor's append-only transparency log.
+
+Key ID format: certificate chain + Rekor log entry.
+
+** PKCS#7 (X.509)
+
+Uses X.509 certificates from a PKI hierarchy. Suitable for
+organizations with existing PKI infrastructure (governments,
+construction companies).
+
+Key ID format: certificate fingerprint or serial + issuer.
+
+** Multi-party signing
+
+A manifest MAY include an array of signatures:
+
+#+BEGIN_SRC json
+"signatures": [
+  {"backend": "gpg", "key_id": "...", "value": "..."},
+  {"backend": "pkcs7", "key_id": "...", "value": "..."}
+]
+#+END_SRC
+
+Each signer signs the same canonical manifest. Verification succeeds
+when all signatures are valid. This enables chain-of-custody: each
+party in a supply chain signs its contribution.
+
+* Verification
+
+Verification is a deterministic process:
+
+1. Parse the manifest JSON
+2. Extract the =signature= field(s)
+3. Rebuild the canonical manifest (without signatures)
+4. Compute SHA-256 hash of canonical manifest
+5. Verify the signature against the canonical hash using the signer's
+   public key
+6. For each artifact: compute SHA-256 hash and compare with =artifact.hash=
+7. If =supersedes= is present: recursively verify the previous manifest
+
+Result: all checks passed, or a list of failures.
+
+Verification does NOT require:
+- Network access
+- The original source to be online
+- A signing server or registry
+- Any external service (except optionally for key discovery)
+
+* Chaining
+
+Chaining links manifests through the =supersedes= field, forming a
+provenance chain:
+
+  M1 (initial delivery)
+   ↑ supersedes
+  M2 (updated delivery)
+   ↑ supersedes
+  M3 (latest delivery)
+
+Each manifest references its predecessor by hash. Tampering with M1
+breaks M2's =manifest_id=, which in turn breaks M3. This creates a
+tamper-evident chain rooted in the first manifest.
+
+Chaining is optional. A standalone manifest without =supersedes= is
+fully valid.
+
+** Use cases for chaining
+
+- Version history: each IFC model revision links to the previous one
+- Audit trail: each data transformation appends a new manifest
+- Multi-party: each participant signs and chains their contribution
+- Stream segmentation: time-windowed manifests chain chronologically
+
+* Domain extension model
+
+DPP is domain-independent: the core manifest format has no
+domain-specific fields. Domains add fields through the =extensions=
+object.
+
+#+BEGIN_SRC json
+{
+  "schema": "dpp/1.0",
+  "domain": "bim-ifc/1.0",
+  "extensions": {
+    "bim-ifc": {
+      "project_id": "KANTOOR-2026-01",
+      "ifc_schema": "IFC4",
+      "authoring_tool": "ifckit v0.2.1",
+      "coordinate_system": "EPSG:7415"
+    }
+  }
+}
+#+END_SRC
+
+** Extension rules
+
+1. Extensions are keyed by domain identifier (=bim-ifc=, =gis-geopackage=)
+2. A manifest MAY include multiple extensions from different domains
+3. Extensions are JSON objects, fully defined by the domain
+4. Verification ignores unknown extensions — they don't break validation
+5. Domain-aware verifiers MAY validate extension content
+
+* Client-side collection manifest
+
+The client-side mode collects data from multiple sources and records
+the provenance of the collection itself.
+
+#+BEGIN_SRC json
+{
+  "schema": "dpp-collection/1.0",
+  "manifest_id": "urn:sha256:...",
+  "created": "2026-06-23T10:00:00Z",
+  "tool": "onderlegger.mauc.nl",
+  "session_id": "a1b2c3d4",
+  "description": "Perceeldata voor locatie 52.0902,5.1114",
+  "sources": [
+    {
+      "name": "Kadaster",
+      "url": "https://api.kadaster.nl/v1/percelen/...",
+      "fetch_time": "2026-06-23T10:00:02Z",
+      "response_hash": "sha256:d4e5f6a7b8c9...",
+      "response_size": 4821033,
+      "content_type": "application/geopackage+sqlite3",
+      "server_manifest": null
+    }
+  ],
+  "signed_by": "onderlegger.mauc.nl",
+  "signature": { ... }
+}
+#+END_SRC
+
+** Differences from server-side manifest
+
+| Aspect               | Server-side                 | Client-side collection     |
+|----------------------+-----------------------------+----------------------------|
+| Schema               | =dpp/1.0=                   | =dpp-collection/1.0=       |
+| Signs                | The data provided           | The act of collecting      |
+| Artifacts            | =artifacts= array           | =sources= array            |
+| Source identity      | Implicit (the signer)       | Explicit per source        |
+| Network dependency   | None for verification       | Sources may be offline     |
+| Server-side manifest | Not applicable              | Optional =server_manifest= |
+
+** Combined provenance
+
+When a source provides its own DPP manifest, the collection manifest
+references it via =server_manifest=. This creates two-layer provenance:
+
+1. Server layer: Kadaster signs its GeoPackage (server-side)
+2. Client layer: onderlegger signs the collection of Kadaster's data
+   (client-side), referencing Kadaster's manifest
+
+Verification checks both layers. Result: "This data is authentic
+(Kadaster) and was correctly collected (onderlegger) at this time."
+
+* Discovery
+
+How a verifier finds the manifest for a given dataset:
+
+| Method    | Description                                          | Required          |
+|-----------+------------------------------------------------------+-------------------|
+| In-band   | =manifest.json= next to the data (same directory/zip) | No infrastructure |
+| URL       | Manifest URL in metadata (HTTP header, API field)     | Source online     |
+| Registry  | Hash-based lookup: sha256(file) → manifest            | Registry service  |
+| DNS       | DNS TXT record with manifest hash (DNSSEC)            | DNSSEC zone       |
+
+In-band is the primary method for the protocol — no infrastructure
+required. Registry and DNS are optional discovery mechanisms.
+
+* Infrastructure components
+
+DPP defines three optional infrastructure components. All are
+implementable by third parties based on the specification.
+
+** Signing Server
+
+An HTTPS service that signs manifests on behalf of an organization:
+
+- Holds keys in HSM or secure enclave
+- Authenticates users via OIDC or API key
+- Logs every signing for audit
+- Enforces authorization (who can sign what)
+
+** Manifest Registry
+
+An append-only public registry for manifest publication:
+
+- Stores manifests by hash
+- Provides timestamp proof (manifest existed at time T)
+- Enables verification without the original sender
+- Analogous to Sigstore Rekor / Certificate Transparency
+
+** Verification Client
+
+The only mandatory component. Implementations:
+
+- CLI: local verification for CI/CD and automated checks
+- Web: browser-based verification via Web Crypto API
+
+* Security considerations
+
+- Hash algorithm: SHA-256 minimum. SHA-512 recommended for long-term
+  archival (>10 years).
+- Key compromise: manifests signed before compromise remain verifiable
+  (they contain data hashes). Revoked keys invalidate signatures but
+  not data integrity — the hash still proves the data hasn't changed.
+- Replay attacks: manifest with =supersedes= prevents replacement of
+  old data with new manifest referencing it.
+- Canonicalization: sorted keys, no whitespace, no trailing commas.
+  Any deviation produces a different hash and breaks verification.
+
+* Appendices
+
+** Comparison with existing protocols
+
+| Protocol | Secures       | Preserves proof | Scope            |
+|----------+---------------+-----------------+------------------|
+| TLS      | Connection    | No              | Transport         |
+| DNSSEC   | DNS response  | No              | DNS               |
+| PKCS#7   | Document      | Yes, no context | Documents         |
+| in-toto  | Software SCM  | Yes             | Software only     |
+| C2PA     | Media         | Yes             | Images/audio/video |
+| DPP      | Generic data  | Yes             | Everything        |
+
+** Conformance
+
+A conforming DPP implementation MUST:
+
+1. Parse and validate a DPP manifest according to this specification
+2. Compute the canonical hash for verification
+3. Verify signatures for at least one backend (GPG, Sigstore, or PKCS#7)
+4. Verify artifact hashes
+5. Report verification results (pass/fail per check)
+
+A conforming implementation MAY:
+
+1. Support additional signing backends
+2. Validate domain-specific extensions
+3. Handle chaining (supersedes)
+4. Support collection manifests (dpp-collection schema)

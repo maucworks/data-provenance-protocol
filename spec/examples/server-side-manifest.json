@@ -1,0 +1,37 @@
+{
+  "schema": "dpp/1.0",
+  "manifest_id": "urn:sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "created": "2026-09-01T10:00:00Z",
+  "domain": "bim-ifc/1.0",
+  "description": "IFC delivery — Kantoorpark Zuid, revision 3",
+  "artifacts": [
+    {
+      "path": "model.ifc",
+      "hash": "sha256:d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4",
+      "size": 4821033
+    },
+    {
+      "path": "meta/project.json",
+      "hash": "sha256:a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0",
+      "size": 1024
+    }
+  ],
+  "metadata": {
+    "project": "KANTOOR-2026-01",
+    "revision": 3
+  },
+  "extensions": {
+    "bim-ifc": {
+      "ifc_schema": "IFC4",
+      "authoring_tool": "ifckit v0.2.1",
+      "coordinate_system": "EPSG:7415"
+    }
+  },
+  "supersedes": "urn:sha256:b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1",
+  "signed_by": "Sander Boer <sanderboer@mauc.nl>",
+  "signature": {
+    "backend": "gpg",
+    "key_id": "ABCD1234EF567890ABCDEF1234567890ABCDEF12",
+    "value": "LS0tLS1CRUdJTiBQR1AgU0lHTkFUVVJFLS0tLS0K..."
+  }
+}

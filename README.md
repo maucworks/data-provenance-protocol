@@ -9,6 +9,21 @@ Internet data exchange lacks a generic protocol for verifiable provenance. TLS a
 
 Five EU regulations take effect in 2026 requiring provenance without a technical protocol: AI Act, Cyber Resilience Act, Digital Product Passport, Data Act, CSRD.
 
+## Structure
+
+```
+├── spec/                    # CC0 — protocol specification (org-mode)
+│   ├── dpp-specification.org
+│   ├── manifest-schema.json
+│   ├── collection-manifest-schema.json
+│   └── examples/
+├── cli/                     # GPLv3+ — Python CLI: init, add, sign, verify, report
+├── web/                     # MIT — TypeScript + SCSS, Vite, browser verification
+├── demo/bim/                # ifckit + DPP demonstrator
+├── demo/gis/                # onderlegger + DPP demonstrator
+└── docs/                    # User guide, examples (org-mode)
+```
+
 ## Plan
 
 Duration: September 2026 – February 2027 (6 months, 26 weeks). SIDN Pioniers.

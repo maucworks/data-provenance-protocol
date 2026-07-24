@@ -1,0 +1,31 @@
+Data Provenance Protocol (DPP) — License
+
+This repository contains multiple components under different licenses.
+
+Specification (spec/)
+    CC0-1.0 — Public Domain Dedication
+    The protocol specification is dedicated to the public domain.
+    Everyone is free to implement, extend, and reference it without restriction.
+
+DPP CLI (cli/)
+    GPL-3.0-or-later
+    The reference command-line implementation is free software: you can
+    redistribute it and/or modify it under the terms of the GNU General
+    Public License as published by the Free Software Foundation, either
+    version 3 of the License, or (at your option) any later version.
+
+Web Verification Demo (web/)
+    MIT
+    The browser-based verification demo is released under the MIT license,
+    permitting unrestricted reuse including in proprietary software.
+
+BIM Demonstrator (demo/bim/)
+GIS Demonstrator (demo/gis/)
+    License to be determined at implementation time.
+
+Full license texts are available at:
+    CC0-1.0:  https://creativecommons.org/publicdomain/zero/1.0/legalcode
+    GPL-3.0:  https://www.gnu.org/licenses/gpl-3.0.html
+    MIT:      https://opensource.org/licenses/MIT
+
+Copyright (c) 2026 Sander Boer
