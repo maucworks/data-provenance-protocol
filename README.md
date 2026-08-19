@@ -5,6 +5,10 @@
 Open, domain-independent protocol for cryptographically verifiable data provenance on the internet. Manifest + hashes + signature + chaining.
 Self-contained verification, no platform, no server, no need to go back to the source.
 
+[![SIDN fonds](./res/sidn-fonds-logo.png)](https://www.sidnfonds.nl/projecten/261038-of-dpp-data-provenance-protocol)
+
+Dit project wordt mede mogelijk gemaakt door SIDN fonds — Pioniersproject binnen *Sterk Internet* (2026).
+
 ## Rationale
 
 Internet data exchange lacks a generic protocol for verifiable provenance. TLS and DNSSEC secure the connection, not the object. DPP adds the missing layer: persistent proof of origin.
@@ -28,7 +32,7 @@ Five EU regulations take effect in 2026 requiring provenance without a technical
 
 ## Plan
 
-Duration: September 2026 – February 2027 (6 months, 26 weeks). SIDN Pioniers.
+Duration: September 2026 – February 2027 (6 months, 26 weeks). [SIDN Pioniers](https://www.sidnfonds.nl/projecten/261038-of-dpp-data-provenance-protocol).
 
 ### Phases
 
