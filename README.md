@@ -5,7 +5,7 @@
 Open, domain-independent protocol for cryptographically verifiable data provenance on the internet. Manifest + hashes + signature + chaining.
 Self-contained verification, no platform, no server, no need to go back to the source.
 
-[![SIDN fonds](./res/sidn-fonds-logo.png)](https://www.sidnfonds.nl/projecten/261038-of-dpp-data-provenance-protocol)
+<a href="https://www.sidnfonds.nl/projecten/261038-of-dpp-data-provenance-protocol"><img src="./res/sidn-fonds-logo.png" alt="SIDN fonds" width="240"></a>
 
 Dit project wordt mede mogelijk gemaakt door SIDN fonds — Pioniersproject binnen *Sterk Internet* (2026).
 
